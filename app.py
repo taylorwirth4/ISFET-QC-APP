@@ -23,8 +23,8 @@ tab1, tab2, tab3, tab4 = st.tabs(["📁 Upload", "Initial plots", "Calc k0","QCe
 
 with tab1:
     st.header("Upload Sensor File")
-    # data_file = st.file_uploader("CSV file with headers: DTUTC, VINT, TEMPC", type="csv")
-    data_file = "/Users/taylorwirth/Desktop/ISFET_QC_GUI/sensor_data_example_stable.csv"
+    data_file = st.file_uploader("CSV file with headers: DTUTC, VINT, TEMPC", type="csv")
+    # data_file = "/Users/taylorwirth/Desktop/ISFET_QC_GUI/sensor_data_example_stable.csv"
     
     if data_file is not None:
         sen_df = pd.read_csv(data_file)
