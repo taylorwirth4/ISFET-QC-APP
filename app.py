@@ -35,8 +35,8 @@ with tab1:
         st.info("Upload a CSV file to continue.")
 
     st.header("Upload Bottle File")
-    # bottle_file = st.file_uploader("CSV file with headers: DTUTC, SPECPH...", type="csv")
-    bottle_file = "/Users/taylorwirth/Desktop/ISFET_QC_GUI/bottle_example.csv"
+    bottle_file = st.file_uploader("CSV file with headers: DTUTC, SPECPH...", type="csv")
+    # bottle_file = "/Users/taylorwirth/Desktop/ISFET_QC_GUI/bottle_example.csv"
     
     if bottle_file is not None:
         bott_df = pd.read_csv(bottle_file)
@@ -53,8 +53,8 @@ with tab1:
         st.info("Upload a CSV file to continue.")
         
     st.header("Upload Tris File (injection times)")
-    # tris_file = st.file_uploader("CSV file with headers: ", type="csv")
-    tris_file = "/Users/taylorwirth/Desktop/ISFET_QC_GUI/tris_example.csv"
+    tris_file = st.file_uploader("CSV file with headers: ", type="csv")
+    # tris_file = "/Users/taylorwirth/Desktop/ISFET_QC_GUI/tris_example.csv"
     
     if tris_file is not None:
         tris_df = pd.read_csv(tris_file)
