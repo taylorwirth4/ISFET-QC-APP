@@ -22,54 +22,87 @@ st.markdown("Test")
 tab1, tab2, tab3, tab4 = st.tabs(["📁 Upload", "Initial plots", "Calc k0","QCed data"])
 
 with tab1:
-    st.header("Upload Sensor File")
-    data_file = st.file_uploader("CSV file with headers: DTUTC, VINT, TEMPC", type="csv")
-    # data_file = "/Users/taylorwirth/Desktop/ISFET_QC_GUI/sensor_data_example_stable.csv"
-    
-    if data_file is not None:
+    st.header("Use test files")
+    if st.button("Load example files", type='primary'):
+        st.write("Sensor file loaded")
+        data_file = "sensor_data_example_stable.csv"
         sen_df = pd.read_csv(data_file)
         sen_df['DTUTC'] = pd.to_datetime(sen_df['DTUTC']) # cconvert to datetime
         sen_df = sen_df.set_index('DTUTC') # Set index to datetime
         st.dataframe(sen_df, height = 200)
-    else:
-        st.info("Upload a CSV file to continue.")
-
-    st.header("Upload Bottle File")
-    bottle_file = st.file_uploader("CSV file with headers: DTUTC, SPECPH...", type="csv")
-    # bottle_file = "/Users/taylorwirth/Desktop/ISFET_QC_GUI/bottle_example.csv"
-    
-    if bottle_file is not None:
+       
+        st.write("Bottle file loaded")
+        bottle_file = "bottle_example.csv"
         bott_df = pd.read_csv(bottle_file)
         bott_df['DTUTC'] = pd.to_datetime(bott_df['DTUTC']) # convert to datetime
         bott_df = bott_df.set_index('DTUTC') # Set index to datetime
-
         # interpolate bottle times and sensor vint
         bott_df['VINT'] = sen_df['VINT'].reindex(bott_df.index)
         bott_df = bott_df[bott_df['VINT'].notna()]
-
         bott_df['TCinsitu'] = sen_df['TEMPC'].reindex(bott_df.index)
         st.dataframe(bott_df, height = 200)
-    else:
-        st.info("Upload a CSV file to continue.")
-        
-    st.header("Upload Tris File (injection times)")
-    tris_file = st.file_uploader("CSV file with headers: ", type="csv")
-    # tris_file = "/Users/taylorwirth/Desktop/ISFET_QC_GUI/tris_example.csv"
-    
-    if tris_file is not None:
+
+        st.write("Tris file loaded")
+        tris_file = "tris_example.csv"
         tris_df = pd.read_csv(tris_file)
         tris_df['DTUTC'] = pd.to_datetime(tris_df['DTUTC']) # convert to datetime
         tris_df = tris_df.set_index('DTUTC') # Set index to datetime
-
         # interpolate tris times and sensor vint
         tris_df['VINT'] = sen_df['VINT'].reindex(tris_df.index)
         tris_df = tris_df[tris_df['VINT'].notna()] # remove rows where VINT is Nan
-
         # interpolate in situ temperature
         tris_df['TCinsitu'] = sen_df['TEMPC'].reindex(tris_df.index) 
         st.dataframe(tris_df, height = 200)
     else:
-        st.info("Upload a CSV file to continue.")
+        st.write("Files not loaded")
+        st.header("Upload Sensor File")
+        data_file = st.file_uploader("CSV file with headers: DTUTC, VINT, TEMPC", type="csv")
+        # data_file = "/Users/taylorwirth/Desktop/ISFET_QC_GUI/sensor_data_example_stable.csv"
+        
+        if data_file is not None:
+            sen_df = pd.read_csv(data_file)
+            sen_df['DTUTC'] = pd.to_datetime(sen_df['DTUTC']) # cconvert to datetime
+            sen_df = sen_df.set_index('DTUTC') # Set index to datetime
+            st.dataframe(sen_df, height = 200)
+        else:
+            st.info("Upload a CSV file to continue.")
+
+        st.header("Upload Bottle File")
+        bottle_file = st.file_uploader("CSV file with headers: DTUTC, SPECPH...", type="csv")
+        # bottle_file = "/Users/taylorwirth/Desktop/ISFET_QC_GUI/bottle_example.csv"
+        
+        if bottle_file is not None:
+            bott_df = pd.read_csv(bottle_file)
+            bott_df['DTUTC'] = pd.to_datetime(bott_df['DTUTC']) # convert to datetime
+            bott_df = bott_df.set_index('DTUTC') # Set index to datetime
+
+            # interpolate bottle times and sensor vint
+            bott_df['VINT'] = sen_df['VINT'].reindex(bott_df.index)
+            bott_df = bott_df[bott_df['VINT'].notna()]
+
+            bott_df['TCinsitu'] = sen_df['TEMPC'].reindex(bott_df.index)
+            st.dataframe(bott_df, height = 200)
+        else:
+            st.info("Upload a CSV file to continue.")
+            
+        st.header("Upload Tris File (injection times)")
+        tris_file = st.file_uploader("CSV file with headers: ", type="csv")
+        # tris_file = "/Users/taylorwirth/Desktop/ISFET_QC_GUI/tris_example.csv"
+        
+        if tris_file is not None:
+            tris_df = pd.read_csv(tris_file)
+            tris_df['DTUTC'] = pd.to_datetime(tris_df['DTUTC']) # convert to datetime
+            tris_df = tris_df.set_index('DTUTC') # Set index to datetime
+
+            # interpolate tris times and sensor vint
+            tris_df['VINT'] = sen_df['VINT'].reindex(tris_df.index)
+            tris_df = tris_df[tris_df['VINT'].notna()] # remove rows where VINT is Nan
+
+            # interpolate in situ temperature
+            tris_df['TCinsitu'] = sen_df['TEMPC'].reindex(tris_df.index) 
+            st.dataframe(tris_df, height = 200)
+        else:
+            st.info("Upload a CSV file to continue.")
 
 
 
