@@ -128,9 +128,16 @@ with tab2:
         # tris_file = "/Users/taylorwirth/Desktop/ISFET_QC_GUI/tris_example.csv"
         
         if skip_tris:
-            # Create a dummy empty tris_df with proper structure
+            # Create a dummy empty tris_df with proper structure and all required columns
             tris_df = pd.DataFrame(index=pd.DatetimeIndex([], name='DTUTC'))
             tris_df['QC'] = pd.Series(dtype='int64')
+            tris_df['VINT'] = pd.Series(dtype='float64')
+            tris_df['TCinsitu'] = pd.Series(dtype='float64')
+            tris_df['PHinsitu'] = pd.Series(dtype='float64')
+            tris_df['kTint'] = pd.Series(dtype='float64')
+            tris_df['k0int'] = pd.Series(dtype='float64')
+            tris_df['pHint_cor'] = pd.Series(dtype='float64')
+            tris_df['residuals'] = pd.Series(dtype='float64')
             st.session_state.tris_file = "dummy_tris_skipped"
             st.session_state.tris_df = tris_df
             st.info("Tris analysis skipped. Empty tris table created.")
@@ -457,77 +464,79 @@ with tab4:
                 textangle=0
                 )
 
-            figkT.add_trace( # k2 tris scatter
-                go.Scatter(
-                    x=tris_df_qc['TCinsitu'],
-                    y=tris_df_qc['kTint'],
-                    mode='markers',
-                    name='tris',
-                    marker=dict(color="#00CBFE", symbol='triangle-up-open', size=10, line=dict(width=2)),
-                    showlegend=True,
-                    customdata=tris_df_qc.index.strftime('%Y-%m-%d %H:%M:%S'),
-                    hovertemplate='TCinsitu: %{x}<br>kTint: %{y}<br>Date: %{customdata}<extra></extra>'),
-                row=1, col=1)
-            
-            # Linear fit for tris  (QC)
-            if len(tris_df_qc) > 1:
-                x = tris_df_qc['TCinsitu']
-                y = tris_df_qc['kTint']
-                coeffs = np.polyfit(x, y, 1)
-                fit_line = np.poly1d(coeffs)
-                x_fit = np.linspace(x.min(), x.max(), 100)
-                y_fit = fit_line(x_fit)
-                figkT.add_trace(
+            # Add tris kTint scatter only if tris data exists
+            if len(tris_df_qc) > 0:
+                figkT.add_trace( # k2 tris scatter
                     go.Scatter(
-                        x=x_fit,
-                        y=y_fit,
-                        mode='lines',
-                        name='tris fit',
-                        line=dict(color="#00CBFE", dash='dash'),
-                        showlegend=False
-                    ),
-                    row=1, col=1
-                )
+                        x=tris_df_qc['TCinsitu'],
+                        y=tris_df_qc['kTint'],
+                        mode='markers',
+                        name='tris',
+                        marker=dict(color="#00CBFE", symbol='triangle-up-open', size=10, line=dict(width=2)),
+                        showlegend=True,
+                        customdata=tris_df_qc.index.strftime('%Y-%m-%d %H:%M:%S'),
+                        hovertemplate='TCinsitu: %{x}<br>kTint: %{y}<br>Date: %{customdata}<extra></extra>'),
+                    row=1, col=1)
             
-            if len(tris_df_qc) > 1: # Add annotation for tris linear fit
-                slope = coeffs[0]
-                intercept = coeffs[1]
-                
-                percent_diff = 100 * (slope - (-0.001455)) / abs(-0.001455)
-                text = f"k2int = {slope*1E3:.3f} mV"
-                text += f"<br>percent diff = {percent_diff:.2f}%"
-                # Place annotation at the middle of the fit line
-                x_annot = x_fit[len(x_fit)//2]
-                y_annot = fit_line(x_annot)
-                # Calculate angle of the fit line for annotation rotation
-                # For visual angle correction based on plot scaling
-                x_max = np.max(tris_df_qc['TCinsitu'])
-                x_min = np.min(tris_df_qc['TCinsitu'])
-                y_max = np.max(tris_df_qc['kTint'])
-                y_min = np.min(tris_df_qc['kTint'])
-                aspect_ratio = (x_max - x_min) / (y_max - y_min)
+                # Linear fit for tris  (QC)
+                if len(tris_df_qc) > 1:
+                    x = tris_df_qc['TCinsitu']
+                    y = tris_df_qc['kTint']
+                    coeffs = np.polyfit(x, y, 1)
+                    fit_line = np.poly1d(coeffs)
+                    x_fit = np.linspace(x.min(), x.max(), 100)
+                    y_fit = fit_line(x_fit)
+                    figkT.add_trace(
+                        go.Scatter(
+                            x=x_fit,
+                            y=y_fit,
+                            mode='lines',
+                            name='tris fit',
+                            line=dict(color="#00CBFE", dash='dash'),
+                            showlegend=False
+                        ),
+                        row=1, col=1
+                    )
+            
+                if len(tris_df_qc) > 1: # Add annotation for tris linear fit
+                    slope = coeffs[0]
+                    intercept = coeffs[1]
+                    
+                    percent_diff = 100 * (slope - (-0.001455)) / abs(-0.001455)
+                    text = f"k2int = {slope*1E3:.3f} mV"
+                    text += f"<br>percent diff = {percent_diff:.2f}%"
+                    # Place annotation at the middle of the fit line
+                    x_annot = x_fit[len(x_fit)//2]
+                    y_annot = fit_line(x_annot)
+                    # Calculate angle of the fit line for annotation rotation
+                    # For visual angle correction based on plot scaling
+                    x_max = np.max(tris_df_qc['TCinsitu'])
+                    x_min = np.min(tris_df_qc['TCinsitu'])
+                    y_max = np.max(tris_df_qc['kTint'])
+                    y_min = np.min(tris_df_qc['kTint'])
+                    aspect_ratio = (x_max - x_min) / (y_max - y_min)
 
-                # Rescale y difference
-                y1 = tris_df_qc['kTint'].iloc[0]
-                y2 = tris_df_qc['kTint'].iloc[-1]
-                x1 = tris_df_qc['TCinsitu'].iloc[0]
-                x2 = tris_df_qc['TCinsitu'].iloc[-1]
-                dy = (y2 - y1) * aspect_ratio
-                dx = (x2 - x1)
+                    # Rescale y difference
+                    y1 = tris_df_qc['kTint'].iloc[0]
+                    y2 = tris_df_qc['kTint'].iloc[-1]
+                    x1 = tris_df_qc['TCinsitu'].iloc[0]
+                    x2 = tris_df_qc['TCinsitu'].iloc[-1]
+                    dy = (y2 - y1) * aspect_ratio
+                    dx = (x2 - x1)
 
-                visual_theta_rad = np.abs(math.atan2(dy, dx))
-                visual_theta_deg = math.degrees(visual_theta_rad)
-                angle_deg = visual_theta_deg
-                figkT.add_annotation(
-                x=x_annot,
-                y=y_annot,
-                text=text,
-                showarrow=False,
-                font=dict(color="#00CBFE"),
-                yshift=20,
-                xanchor="left",
-                textangle=0
-                )
+                    visual_theta_rad = np.abs(math.atan2(dy, dx))
+                    visual_theta_deg = math.degrees(visual_theta_rad)
+                    angle_deg = visual_theta_deg
+                    figkT.add_annotation(
+                    x=x_annot,
+                    y=y_annot,
+                    text=text,
+                    showarrow=False,
+                    font=dict(color="#00CBFE"),
+                    yshift=20,
+                    xanchor="left",
+                    textangle=0
+                    )
             
             figkT.add_trace( # bottle k0int scatter
                 go.Scatter(
@@ -588,82 +597,84 @@ with tab4:
                 )
             
 
-            figkT.add_trace( # tris k0int scatter
-                go.Scatter(
-                    x=tris_df_qc.index,
-                    y=tris_df_qc['k0int'],
-                    mode='markers',
-                    name='tris',
-                    marker=dict(color="#00CBFE", symbol='triangle-up-open', size=10, line=dict(width=2)),
-                    showlegend=False,
-                    customdata=tris_df_qc.index.strftime('%Y-%m-%d %H:%M:%S'),
-                    hovertemplate='Date: %{x}<br>k0int: %{y}<extra></extra>'
-                ),
-                row=2, col=1
-            )
-            # add horizontal line for mean tris k0int
-            tris_mean = tris_df_qc['k0int'].mean()
-            tris_std = tris_df_qc['k0int'].std()
-            figkT.add_hline(y=tris_mean, line_color='black', line_dash='dash', line_width=1, row=2, col=1) 
-            # add shaded box plus/minus 3 std for tris k0int
-            figkT.add_shape(
-            type="rect",
-            x0=sen_df.index.min(), 
-            x1=sen_df.index.max(),
-            y0=tris_mean+0.0003,
-            y1=tris_mean-0.0003,
-            fillcolor="Gold",
-            opacity=0.3,
-            line_width=0,
-            row=2, col=1
-            )   
-
-            # Linear fit for k0int vs date (convert datetime to ordinal for fitting)
-            if len(tris_df_qc) > 1:
-                x_dates = tris_df_qc.index.map(pd.Timestamp.toordinal).values
-                y_k0int = tris_df_qc['k0int'].values
-                coeffs = np.polyfit(x_dates, y_k0int, 1)
-                fit_line = np.poly1d(coeffs)
-                x_fit = np.linspace(x_dates.min(), x_dates.max(), 100)
-                y_fit = fit_line(x_fit)
-                # Convert x_fit back to datetime for plotting
-                x_fit_dates = [pd.Timestamp.fromordinal(int(x)) for x in x_fit]
-                figkT.add_trace(
+            # Add tris k0int scatter and statistics only if tris data exists
+            if len(tris_df_qc) > 0:
+                figkT.add_trace( # tris k0int scatter
                     go.Scatter(
-                        x=x_fit_dates,
-                        y=y_fit,
-                        mode='lines',
-                        name='tris fit',
-                        line=dict(color="#00CBFE", dash='dash'),
-                        showlegend=False
+                        x=tris_df_qc.index,
+                        y=tris_df_qc['k0int'],
+                        mode='markers',
+                        name='tris',
+                        marker=dict(color="#00CBFE", symbol='triangle-up-open', size=10, line=dict(width=2)),
+                        showlegend=False,
+                        customdata=tris_df_qc.index.strftime('%Y-%m-%d %H:%M:%S'),
+                        hovertemplate='Date: %{x}<br>k0int: %{y}<extra></extra>'
                     ),
                     row=2, col=1
                 )
-                # Calculate slope per day
-                slope_per_day = coeffs[0]
-                text = f"k0int mean = {np.mean(tris_df_qc['k0int']):.4f} ± {np.std(tris_df_qc['k0int'])*1E6:.0f} uV"
-                text += f"<br>k0int drift = {slope_per_day*1E6:.0f} uV/day"
-                # Place annotation at the middle of the fit line
-                x_annot = x_fit_dates[len(x_fit_dates)//2]
-                y_annot = fit_line(x_fit[len(x_fit)//2])
-                figkT.add_annotation(
-                    x=x_annot,
-                    y=y_annot,
-                    text=text,
-                    showarrow=False,
-                    font=dict(color="#00CBFE"),
-                    yshift=20,
-                    xanchor="left",
-                    textangle=0,
-                    row=2, col=1
-                )
-                
-                figkT.update_yaxes(title_text="kTint (V)", row=1, col=1)
-                figkT.update_xaxes(title_text="Temperature (C)", row=1, col=1)
-                figkT.update_yaxes(title_text="k0int (V)", row=2, col=1)
-                figkT.update_xaxes(showgrid=True, gridwidth=1, gridcolor='lightgray', row=1, col=1)
-                figkT.update_layout(height=700,dragmode='zoom')
-                st.plotly_chart(figkT, use_container_width=True)
+                # add horizontal line for mean tris k0int
+                tris_mean = tris_df_qc['k0int'].mean()
+                tris_std = tris_df_qc['k0int'].std()
+                figkT.add_hline(y=tris_mean, line_color='black', line_dash='dash', line_width=1, row=2, col=1) 
+                # add shaded box plus/minus 3 std for tris k0int
+                figkT.add_shape(
+                type="rect",
+                x0=sen_df.index.min(), 
+                x1=sen_df.index.max(),
+                y0=tris_mean+0.0003,
+                y1=tris_mean-0.0003,
+                fillcolor="Gold",
+                opacity=0.3,
+                line_width=0,
+                row=2, col=1
+                )   
+
+                # Linear fit for k0int vs date (convert datetime to ordinal for fitting)
+                if len(tris_df_qc) > 1:
+                    x_dates = tris_df_qc.index.map(pd.Timestamp.toordinal).values
+                    y_k0int = tris_df_qc['k0int'].values
+                    coeffs = np.polyfit(x_dates, y_k0int, 1)
+                    fit_line = np.poly1d(coeffs)
+                    x_fit = np.linspace(x_dates.min(), x_dates.max(), 100)
+                    y_fit = fit_line(x_fit)
+                    # Convert x_fit back to datetime for plotting
+                    x_fit_dates = [pd.Timestamp.fromordinal(int(x)) for x in x_fit]
+                    figkT.add_trace(
+                        go.Scatter(
+                            x=x_fit_dates,
+                            y=y_fit,
+                            mode='lines',
+                            name='tris fit',
+                            line=dict(color="#00CBFE", dash='dash'),
+                            showlegend=False
+                        ),
+                        row=2, col=1
+                    )
+                    # Calculate slope per day
+                    slope_per_day = coeffs[0]
+                    text = f"k0int mean = {np.mean(tris_df_qc['k0int']):.4f} ± {np.std(tris_df_qc['k0int'])*1E6:.0f} uV"
+                    text += f"<br>k0int drift = {slope_per_day*1E6:.0f} uV/day"
+                    # Place annotation at the middle of the fit line
+                    x_annot = x_fit_dates[len(x_fit_dates)//2]
+                    y_annot = fit_line(x_fit[len(x_fit)//2])
+                    figkT.add_annotation(
+                        x=x_annot,
+                        y=y_annot,
+                        text=text,
+                        showarrow=False,
+                        font=dict(color="#00CBFE"),
+                        yshift=20,
+                        xanchor="left",
+                        textangle=0,
+                        row=2, col=1
+                    )
+            
+            figkT.update_yaxes(title_text="kTint (V)", row=1, col=1)
+            figkT.update_xaxes(title_text="Temperature (C)", row=1, col=1)
+            figkT.update_yaxes(title_text="k0int (V)", row=2, col=1)
+            figkT.update_xaxes(showgrid=True, gridwidth=1, gridcolor='lightgray', row=1, col=1)
+            figkT.update_layout(height=700,dragmode='zoom')
+            st.plotly_chart(figkT, use_container_width=True)
 
             # plot k0 vs time
 
@@ -712,7 +723,7 @@ with tab5:
                 on_change=update_k0_option
             )
         
-        # Use session state k0_option for calculations
+        # Calculate k0_option and k0int BEFORE export section
         k0_option = st.session_state.k0_option
         
         if k0_option == "Bottle mean (QCed)":
@@ -750,6 +761,74 @@ with tab5:
         bott_df_qc['residuals'] = bott_df_qc['pHint_cor'] - bott_df_qc['PHinsitu']
         tris_df_qc['residuals'] = tris_df_qc['pHint_cor'] - tris_df_qc['PHinsitu']
         
+        # Now show export buttons in col_radio
+        with col_radio:
+            st.markdown("---")
+            st.subheader("Export QC Data")
+            
+            if st.button("Download QC Files", key="export_button"):
+                st.session_state.show_download_buttons = True
+            
+            if st.session_state.get("show_download_buttons", False):
+                from datetime import datetime
+                timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+                
+                # Prepare QC sensor data CSV
+                qc_sensor_data = pd.DataFrame({
+                    'DTUTC': sen_df.index,
+                    'TEMPC': sen_df['TEMPC'],
+                    'VINT': sen_df['VINT'],
+                    'k2int': -0.001455,  # constant k2int value
+                    'k0int_used': k0int,
+                    'pHint_cor': sen_df['pHint_cor']
+                })
+                
+                # Round to specified decimal places
+                qc_sensor_data['TEMPC'] = qc_sensor_data['TEMPC'].round(3)
+                qc_sensor_data['VINT'] = qc_sensor_data['VINT'].round(6)
+                qc_sensor_data['k2int'] = qc_sensor_data['k2int'].round(6)
+                qc_sensor_data['k0int_used'] = qc_sensor_data['k0int_used'].round(6)
+                qc_sensor_data['pHint_cor'] = qc_sensor_data['pHint_cor'].round(4)
+                
+                # Prepare bottle data
+                bott_export = bott_df_qc.drop(columns=['QC']).copy()
+
+                # Prepare tris data
+                tris_export = tris_df_qc.drop(columns=['QC']).copy()
+                
+                # Convert to CSV strings
+                qc_sensor_csv = qc_sensor_data.to_csv(index=False)
+                bott_qc_csv = bott_export.to_csv()
+                tris_qc_csv = tris_export.to_csv()
+                
+                # Display download buttons vertically
+                st.download_button(
+                    label="QC Sensor Data",
+                    data=qc_sensor_csv,
+                    file_name=f"sensor_data_qc_{timestamp}.csv",
+                    mime="text/csv",
+                    key="download_sensor",
+                    use_container_width=True
+                )
+                
+                st.download_button(
+                    label="Bottle QC Data",
+                    data=bott_qc_csv,
+                    file_name=f"bottle_data_qc_{timestamp}.csv",
+                    mime="text/csv",
+                    key="download_bottle",
+                    use_container_width=True
+                )
+                
+                st.download_button(
+                    label="Tris QC Data",
+                    data=tris_qc_csv,
+                    file_name=f"tris_data_qc_{timestamp}.csv",
+                    mime="text/csv",
+                    key="download_tris",
+                    use_container_width=True
+                )
+        
         with col_plot:
             st.write(f"**Selected k0 method:** {k0_option}")
 
@@ -781,19 +860,22 @@ with tab5:
                 ),
                 row=1, col=1
             )
-            figpH.add_trace(
-                go.Scatter(
-                    x=tris_df_qc.index,
-                    y=tris_df_qc['PHinsitu'],
-                    mode='markers',
-                    name='tris',
-                    marker=dict(color="#00CBFE", symbol='triangle-up-open', size=10, line=dict(width=2)),
-                    showlegend=True,
-                    customdata=bott_df.index.strftime('%Y-%m-%d %H:%M:%S'),
-                    hovertemplate='Date: %{customdata}<br>pH: %{y}<extra></extra>'
-                ),
-                row=1, col=1
-            )
+            
+            # Add tris pH scatter only if tris data exists
+            if len(tris_df_qc) > 0:
+                figpH.add_trace(
+                    go.Scatter(
+                        x=tris_df_qc.index,
+                        y=tris_df_qc['PHinsitu'],
+                        mode='markers',
+                        name='tris',
+                        marker=dict(color="#00CBFE", symbol='triangle-up-open', size=10, line=dict(width=2)),
+                        showlegend=True,
+                        customdata=bott_df.index.strftime('%Y-%m-%d %H:%M:%S'),
+                        hovertemplate='Date: %{customdata}<br>pH: %{y}<extra></extra>'
+                    ),
+                    row=1, col=1
+                )
             figpH.update_yaxes(title_text="pHint corrected", row=1, col=1)
             # adjsut x-axis range to the sensor data
             figpH.update_xaxes(range=[sen_df.index.min(), sen_df.index.max()], row=1, col=1)
@@ -826,18 +908,20 @@ with tab5:
                 row=2, col=1
             )
 
-            figpH.add_trace(
-                go.Scatter(
-                    x=tris_df_qc.index,
-                    y=tris_df_qc['residuals'],
-                    mode='markers',
-                    name='tris',
-                    marker=dict(color='#00CBFE', symbol='triangle-up-open', size=10, line=dict(width=2)),
-                    showlegend=False,
-                    hovertemplate='Date: %{x}<br>resid: %{y:.4f}<extra></extra>'
-                ),
-                row=2, col=1
-            )
+            # Add tris residuals only if tris data exists
+            if len(tris_df_qc) > 0:
+                figpH.add_trace(
+                    go.Scatter(
+                        x=tris_df_qc.index,
+                        y=tris_df_qc['residuals'],
+                        mode='markers',
+                        name='tris',
+                        marker=dict(color='#00CBFE', symbol='triangle-up-open', size=10, line=dict(width=2)),
+                        showlegend=False,
+                        hovertemplate='Date: %{x}<br>resid: %{y:.4f}<extra></extra>'
+                    ),
+                    row=2, col=1
+                )
 
             figpH.update_xaxes(range=[sen_df.index.min(), sen_df.index.max()], row=2, col=1)
             figpH.update_yaxes(title_text="delta pH", row=2, col=1)
