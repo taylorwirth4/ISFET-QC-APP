@@ -18,7 +18,31 @@ st.set_page_config(page_title="Data Processing App", layout="wide")
 tab1, tab2, tab3, tab4, tab5 = st.tabs(["📝 Instructions","📁 Upload", "📈 Initial plots", "📱 Calc coefficents","✅ QCed data"])
 
 with tab1:
-    st.header("Instructions")  
+    st.title("ISFT QC Processing App")  
+    st.markdown("This app is designed to process and quality control data from ISFET pH sensors, " \
+    "utilizing in situ bottle samples and/or injections of tris buffer in artifical seawater. "\
+    "The user can visiualize the raw data, calculate and compare calibration coefficiencts, "\
+    "and apply them to the dataset to be exported for later use. "\
+    "Follow the instructions below to get started.")
+    st.markdown("Developed by Dr. Taylor Wirth - April 21, 2026")
+    st.subheader("Instructions")
+    st.markdown("1. Upload the data.")
+    st.markdown('''The app utilizes :blue-background[3 data files: sensor data, bottle samples, tris injections].
+        The app functions without tris data (press "Skip Tris" on Upload tab).    
+    Examples of these datafiles are on the github, and can be preloaded to play with using the buttons on the Upload tab.   
+    * The sensor file must be a :blue-background[CSV] with headers: DTUTC, VINT, TEMPC  
+    * The bottle file must be a :blue-background[CSV] with headers: DTUTC, PHspec, TCspec, TA, SAL, QC  
+    * The tris file must be a :blue-background[CSV] with headers: DTUTC, QC  
+    DTUTC is the date and time in UTC, format = 'dd-mm-yyyy HH:MM:SS'  
+    VINT is the raw internal voltage from the ISFET (V)  
+    TEMPC is the in situ temperature (Celsius)  
+    PHspec is the pH of the bottle sample measured in the lab (spectrophotometrically)  
+    TCspec is the temperature (C)of the bottle sample during lab measurement  
+    TA is total alkalinity of the bottle sample (umol/kg) - to be used to calculate in situ pH using CO2sys  
+    SAL is salinity of the bottle sample (PSU)  
+    QC is a column for quality control flags (0 = good, 1 = bad) and can be edited in the app''')
+    st.markdown("2. Visualize your data.")
+    st.markdown("")
 
 with tab2:
     st.header("Example files")
