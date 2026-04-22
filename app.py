@@ -20,33 +20,48 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs(["📝 Instructions","📁 Upload", "📈
 with tab1:
     st.title("ISFT QC Processing App")  
     st.markdown("This app is designed to process and quality control data from ISFET pH sensors, " \
-    "utilizing in situ bottle samples and/or injections of tris buffer in artifical seawater. "\
-    "The user can visiualize the raw data, calculate and compare calibration coefficiencts, "\
-    "and apply them to the dataset to be exported for later use. "\
-    "Follow the instructions below to get started.")
+                "utilizing in situ bottle samples and/or injections of tris buffer in artifical seawater. "\
+                "The user can visiualize the raw data, calculate and compare calibration coefficiencts, "\
+                "and apply them to the dataset to be exported for later use. "\
+                "Follow the instructions below to get started.")
     st.markdown("Developed by Dr. Taylor Wirth - April 21, 2026")
     st.subheader("Instructions")
     st.markdown("1. Upload the data.")
     st.markdown('''The app utilizes :blue-background[3 data files: sensor data, bottle samples, tris injections].
-        The app functions without tris data (press "Skip Tris" on Upload tab).    
-    Examples of these datafiles are on the github, and can be preloaded to play with using the buttons on the Upload tab.   
-    * The sensor file must be a :blue-background[CSV] with headers: DTUTC, VINT, TEMPC  
-    * The bottle file must be a :blue-background[CSV] with headers: DTUTC, PHspec, TCspec, TA, SAL, QC  
-    * The tris file must be a :blue-background[CSV] with headers: DTUTC, QC  
-    DTUTC is the date and time in UTC, format = 'dd-mm-yyyy HH:MM:SS'  
-    VINT is the raw internal voltage from the ISFET (V)  
-    TEMPC is the in situ temperature (Celsius)  
-    PHspec is the pH of the bottle sample measured in the lab (spectrophotometrically)  
-    TCspec is the temperature (C)of the bottle sample during lab measurement  
-    TA is total alkalinity of the bottle sample (umol/kg) - to be used to calculate in situ pH using CO2sys  
-    SAL is salinity of the bottle sample (PSU)  
-    QC is a column for quality control flags (0 = good, 1 = bad) and can be edited in the app''')
-    st.markdown("2. Visualize your data.")
-    st.markdown("")
+                The app functions without tris data (press "Skip Tris" on Upload tab).    
+                Examples of these datafiles are on the github, and can be preloaded to play with using the buttons on the Upload tab.   
+                * The sensor file must be a :blue-background[CSV] with headers: DTUTC, VINT, TEMPC  
+                * The bottle file must be a :blue-background[CSV] with headers: DTUTC, PHspec, TCspec, TA, SAL, QC  
+                * The tris file must be a :blue-background[CSV] with headers: DTUTC, QC  
+                DTUTC is the date and time in UTC, format = 'dd-mm-yyyy HH:MM:SS'  
+                VINT is the raw internal voltage from the ISFET (V)  
+                TEMPC is the in situ temperature (Celsius)  
+                PHspec is the pH of the bottle sample measured in the lab (spectrophotometrically)  
+                TCspec is the temperature (C)of the bottle sample during lab measurement  
+                TA is total alkalinity of the bottle sample (umol/kg) - to be used to calculate in situ pH using CO2sys  
+                SAL is salinity of the bottle sample (PSU)  
+                QC is a column for quality control flags :blue-background[0 = bad, 1 = good] and can be edited in the app''')
+    st.markdown("2. Initial Plots")
+    st.markdown('''Visualize ISFET voltage and temperature, and calibration points.   
+                Use this as a quick look at the data to confirm calibration times. 
+                ''')
+    st.markdown("3. Calculate coefficients")
+    st.markdown('''Automatically calculate in situ kT (temperature dependence) and k0 (standard potential).  
+                Visualize calibration tables and alter QC flats :blue-background[0 = bad, 1 = good] to see how they affect the calculated coefficients.   
+                Comparison to established k2 (slope) values helps identify outliers (if temperature range > 4 C) and if calibrations are viable if k2 is close (within 15%) to established values.  
+                k0 calculation includes mean and standard deviation voltages. If using tris, use a mean k0 if k0 deviation :blue-background[< ±300 uV] (tan shaded area, ±0.006 pH).  
+                If the standard deviation is :blue-background[> ±300 uV], consider using a time-varying k0 (e.g. linear fit). 
+                Current best practices do not suggest using a linear fit for k0 for bottle samples due to inherent sampling uncertainties.
+                ''')
+    st.markdown("4. QCed data")
+    st.markdown('''Visualize adjusted pH with user selectable calibration option: :blue-background[mean bottle k0, mean tris k0, linear tris k0].  
+                The tan shaded region in the residuals plot represents :blue-background[±0.006 pH].  
+                Export QCed data (sensor, bottle and/or tris data) for later use.
+                ''')
 
 with tab2:
     st.header("Example files")
-    st.markdown("Upload your data, calculate in situ k0 from tris/bottles, visualize results, export QCed data.")
+    st.markdown("Choose an example below, or upload your data files to get started.")
 
     col1, col2 = st.columns(2)
     
@@ -184,7 +199,6 @@ with tab2:
 
 
 with tab3:
-    st.write("Validation samples were interpolated in time for Vint and in situ temperature.")
 
     # do this only if all files are uploaded
     if ('data_file' in st.session_state and 'tris_file' in st.session_state 
@@ -244,7 +258,6 @@ with tab3:
 
 
 with tab4:
-    st.header("Calculate k0")
 
     # do this only if all files are uploaded
     if ('data_file' in st.session_state and 'tris_file' in st.session_state 
@@ -709,7 +722,6 @@ with tab4:
         st.info("Upload a sensor data file to begin.")
         
 with tab5: 
-    st.header("Quality controlled pH data")
 
     # do this only if all files are uploaded and QC data exists
     if ('data_file' in st.session_state and 'tris_file' in st.session_state 
@@ -725,7 +737,7 @@ with tab5:
         col_radio, col_plot = st.columns([1, 3])
         
         with col_radio:
-            st.subheader("k0 Options")
+            st.subheader("k0 options")
             
             # Initialize session state for k0_option if not present
             if 'k0_option' not in st.session_state:
@@ -736,11 +748,11 @@ with tab5:
                 st.session_state.k0_option = st.session_state.k0_option_radio
 
             st.radio(
-                "Select k0 calculation method:",
+                "Select k0 method:",
                 (
-                    "Bottle mean (QCed)",
-                    "Tris mean (QCed)",
-                    "Tris linear (QCed)"
+                    "Bottle mean",
+                    "Tris mean",
+                    "Tris linear fit"
                 ),
                 index=0,
                 key="k0_option_radio",
@@ -750,13 +762,13 @@ with tab5:
         # Calculate k0_option and k0int BEFORE export section
         k0_option = st.session_state.k0_option
         
-        if k0_option == "Bottle mean (QCed)":
+        if k0_option == "Bottle mean":
                 k0int_value = bott_df_qc.loc[bott_df_qc['QC'] == 1, 'k0int'].mean()
                 k0int = np.full(len(sen_df), k0int_value)
-        if k0_option == "Tris mean (QCed)":
+        if k0_option == "Tris mean":
                 k0int_value = tris_df_qc.loc[tris_df_qc['QC'] == 1, 'k0int'].mean()
                 k0int = np.full(len(sen_df), k0int_value)
-        if k0_option == "Tris linear (QCed)":
+        if k0_option == "Tris linear fit":
             # Calculate k0 from the linear fit of tris injections
             x_dates = tris_df_qc.index.map(pd.Timestamp.toordinal).values
             y_k0int = tris_df_qc['k0int'].values
@@ -856,8 +868,7 @@ with tab5:
         with col_plot:
             st.write(f"**Selected k0 method:** {k0_option}")
 
-            figpH = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.07,
-                                subplot_titles=("Quality Controlled pH Data", "Temperature"))
+            figpH = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.07)
 
             # pHint_cor subplot
             figpH.add_trace(
@@ -900,7 +911,7 @@ with tab5:
                     ),
                     row=1, col=1
                 )
-            figpH.update_yaxes(title_text="pHint corrected", row=1, col=1)
+            figpH.update_yaxes(title_text="pHint", row=1, col=1)
             # adjsut x-axis range to the sensor data
             figpH.update_xaxes(range=[sen_df.index.min(), sen_df.index.max()], row=1, col=1)
 
@@ -948,9 +959,8 @@ with tab5:
                 )
 
             figpH.update_xaxes(range=[sen_df.index.min(), sen_df.index.max()], row=2, col=1)
-            figpH.update_yaxes(title_text="delta pH", row=2, col=1)
+            figpH.update_yaxes(title_text="pH residuals (sensor-cal)", row=2, col=1)
 
-            figpH.update_xaxes(title_text="DateTime", row=2, col=1)
             figpH.update_layout(height=700)
             st.plotly_chart(figpH, use_container_width=True)
     else:
